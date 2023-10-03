@@ -15,7 +15,7 @@ class DataBase:
         self.connection = sqlite3.connect(config.db.database)
         self.cursor = self.connection.cursor()
 
-    def get_type_name(self, topic_id: int):
+    def get_topic_name(self, topic_id: int):
         sql = "SELECT topic_name FROM TopicTypes WHERE topic_id={}".format(topic_id)
         self.cursor.execute(sql)
         return self.cursor.fetchall()[0][0]
@@ -32,9 +32,8 @@ class DataBase:
     def add_message(self, message_id: int, user_id: int, topic_id: int, message: str):
         sql = """INSERT INTO Messages (message_id, user_id, topic_id, message) 
         VALUES (?, ?, ?, ?)"""
-        data_typle = (message_id, user_id, topic_id, message)
         try:
-            self.cursor.execute(sql, data_typle)
+            self.cursor.execute(sql, (message_id, user_id, topic_id, message,))
             self.connection.commit()
         except Exception as e:
             print(e)
@@ -65,17 +64,18 @@ class DataBase:
                 """,
                 """
                 CREATE TABLE IF NOT EXISTS "Messages" (
-                    "message_id"	INTEGER NOT NULL UNIQUE,
+                    "chat_id"	INTEGER,
+                    "message_id"	INTEGER NOT NULL,
                     "user_id"	INTEGER,
                     "topic_id"	INTEGER NOT NULL,
                     "message"	TEXT NOT NULL,
-                    "repsonse"	TEXT,
+                    "repsonse"	TEXT DEFAULT NULL,
                     "message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
                     "pin_id"	INTEGER,
-                    FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION,
-                    PRIMARY KEY("message_id"),
+                    FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION,
                     FOREIGN KEY("user_id") REFERENCES "Users"("user_id") ON DELETE SET NULL,
-                    FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION
+                    PRIMARY KEY("message_id","chat_id"),
+                    FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION
                 );
                 """]
         for sql in tables_sql: self.cursor.execute(sql)
@@ -84,28 +84,28 @@ class DataBase:
 
     
     def get_min_max_date(self):
-        sql = "SELECT min(date), max(date) FROM UsersMessages;"
+        sql = "SELECT min(message_date), max(message_date) FROM Messages;"
         self.cursor.execute(sql)
         return self.cursor.fetchall()[0]
 
     def get_week_topics_amount(self, time_start: datetime, time_end: datetime):
         sql = "SELECT \
-                    type_name, \
-                    count(um.type_id) \
-                FROM UsersMessages um \
-                JOIN MessageTypes mt ON mt.type_id = um.type_id \
-                WHERE date BETWEEN ? AND ? \
-                GROUP BY type_name; "
+                    topic_name, \
+                    count(m.topic_id) \
+                FROM Messages m \
+                JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
+                WHERE message_date BETWEEN ? AND ? \
+                GROUP BY topic_name; "
         self.cursor.execute(sql, (time_start, time_end))
         return self.cursor.fetchall()
 
     def get_topics_amount(self):
         sql = "SELECT \
-                    type_name, \
-                    count(um.type_id) \
-                FROM UsersMessages um \
-                JOIN MessageTypes mt ON mt.type_id = um.type_id \
-                GROUP BY type_name;" 
+                    topic_name, \
+                    count(m.topic_id) \
+                FROM Messages m \
+                JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
+                GROUP BY topic_name;" 
         self.cursor.execute(sql)
         return self.cursor.fetchall()
     
@@ -115,12 +115,12 @@ class DataBase:
         return self.cursor.fetchall()
     
     def del_topic(self, topic_id: int):
-        sql = "DELETE FROM MessageTypes WHERE type_id=?"
+        sql = "DELETE FROM TopicTypes WHERE topic_id=?"
         self.cursor.execute(sql, (topic_id,))
         self.connection.commit()
 
     def add_topic(self, topic_name: str):
-        sql = "INSERT INTO MessageTypes (type_name) VALUES (?);"
+        sql = "INSERT INTO TopicTypes (topic_name) VALUES (?);"
         self.cursor.execute(sql, (topic_name,))
         self.connection.commit()
 

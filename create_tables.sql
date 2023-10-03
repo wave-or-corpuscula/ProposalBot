@@ -19,15 +19,16 @@ CREATE TABLE IF NOT EXISTS "Users" (
 );
 
 CREATE TABLE IF NOT EXISTS "Messages" (
-	"message_id"	INTEGER NOT NULL UNIQUE,
+	"chat_id"	INTEGER,
+	"message_id"	INTEGER NOT NULL,
 	"user_id"	INTEGER,
 	"topic_id"	INTEGER NOT NULL,
 	"message"	TEXT NOT NULL,
-	"repsonse"	TEXT,
+	"repsonse"	TEXT DEFAULT NULL,
 	"message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"pin_id"	INTEGER,
-	FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION,
-	PRIMARY KEY("message_id"),
+	FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION,
 	FOREIGN KEY("user_id") REFERENCES "Users"("user_id") ON DELETE SET NULL,
-	FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION
+	PRIMARY KEY("message_id","chat_id"),
+	FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION
 );
