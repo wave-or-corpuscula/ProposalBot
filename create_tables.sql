@@ -1,14 +1,14 @@
-CREATE TABLE "TopicTypes" (
+CREATE TABLE IF NOT EXISTS  "TopicTypes" (
 	"topic_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"topic_name"	TEXT NOT NULL
 );
 
-CREATE TABLE "PinTypes" (
+CREATE TABLE IF NOT EXISTS "PinTypes" (
 	"pin_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
 	"pin_name"	VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE "Users" (
+CREATE TABLE IF NOT EXISTS "Users" (
 	"user_id"	INTEGER NOT NULL UNIQUE,
 	"username"	VARCHAR(255),
 	"first_name"	VARCHAR(255),
@@ -18,7 +18,7 @@ CREATE TABLE "Users" (
 	PRIMARY KEY("user_id")
 );
 
-CREATE TABLE "Messages" (
+CREATE TABLE IF NOT EXISTS "Messages" (
 	"message_id"	INTEGER NOT NULL UNIQUE,
 	"user_id"	INTEGER,
 	"topic_id"	INTEGER NOT NULL,

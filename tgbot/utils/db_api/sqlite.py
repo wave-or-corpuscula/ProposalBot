@@ -1,3 +1,5 @@
+import logging
+
 import sqlite3
 
 from datetime import datetime
@@ -13,10 +15,73 @@ class DataBase:
         self.connection = sqlite3.connect(config.db.database)
         self.cursor = self.connection.cursor()
 
-    def get_type_name(self, type_id: int):
-        sql = "SELECT type_name FROM MessageTypes WHERE type_id={}".format(type_id)
+    def get_type_name(self, topic_id: int):
+        sql = "SELECT topic_name FROM TopicTypes WHERE topic_id={}".format(topic_id)
         self.cursor.execute(sql)
         return self.cursor.fetchall()[0][0]
+    
+    def add_user(self, user_id: int, username, first_name, last_name):
+        sql = """INSERT INTO Users (user_id, username, first_name, last_name) 
+        VALUES (?, ?, ?, ?) """
+        try:
+            self.cursor.execute(sql, (user_id, username, first_name, last_name, ))
+            self.connection.commit()
+        except sqlite3.IntegrityError as e:
+            logging.warning(f"Error while adding user {user_id}: {e}")
+
+    def add_message(self, message_id: int, user_id: int, topic_id: int, message: str):
+        sql = """INSERT INTO Messages (message_id, user_id, topic_id, message) 
+        VALUES (?, ?, ?, ?)"""
+        data_typle = (message_id, user_id, topic_id, message)
+        try:
+            self.cursor.execute(sql, data_typle)
+            self.connection.commit()
+        except Exception as e:
+            print(e)
+    
+    def create_tables(self):
+        tables_sql = ["""
+                CREATE TABLE IF NOT EXISTS  "TopicTypes" (
+                    "topic_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                    "topic_name"	TEXT NOT NULL
+                );
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS "PinTypes" (
+                    "pin_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                    "pin_name"	VARCHAR(255) NOT NULL
+                );
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS "Users" (
+                    "user_id"	INTEGER NOT NULL UNIQUE,
+                    "username"	VARCHAR(255),
+                    "first_name"	VARCHAR(255),
+                    "last_name"	VARCHAR(255),
+                    "registered_date"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "is_banned"	BOOLEAN NOT NULL DEFAULT 0,
+                    PRIMARY KEY("user_id")
+                );
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS "Messages" (
+                    "message_id"	INTEGER NOT NULL UNIQUE,
+                    "user_id"	INTEGER,
+                    "topic_id"	INTEGER NOT NULL,
+                    "message"	TEXT NOT NULL,
+                    "repsonse"	TEXT,
+                    "message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    "pin_id"	INTEGER,
+                    FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION,
+                    PRIMARY KEY("message_id"),
+                    FOREIGN KEY("user_id") REFERENCES "Users"("user_id") ON DELETE SET NULL,
+                    FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION
+                );
+                """]
+        for sql in tables_sql: self.cursor.execute(sql)
+        self.connection.commit()
+        print("tables created")
+
     
     def get_min_max_date(self):
         sql = "SELECT min(date), max(date) FROM UsersMessages;"
@@ -45,7 +110,7 @@ class DataBase:
         return self.cursor.fetchall()
     
     def get_types(self):
-        sql = "SELECT * FROM MessageTypes;"
+        sql = "SELECT * FROM TopicTypes;"
         self.cursor.execute(sql)
         return self.cursor.fetchall()
     
@@ -76,15 +141,6 @@ class DataBase:
                     break
             types_triple.append(triplet)
         return InlineKeyboardMarkup(3, inline_keyboard=types_triple)
-
-    def add_message(self, user_id: int, username: str, message: str, type_id: int):
-        sql = F"INSERT INTO UsersMessages (user_id, user_tag, message, type_id) VALUES (?, ?, ?, ?)"
-        data_typle = (user_id, username, message, type_id)
-        try:
-            self.cursor.execute(sql, data_typle)
-            self.connection.commit()
-        except Exception as e:
-            print(e)
 
     def get_types_edit_keyboard(self):
         types = self.get_types()

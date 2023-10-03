@@ -24,7 +24,8 @@ from tgbot.filters.text import TextFilter
 from tgbot.utils.db_api.sqlite import DataBase
 
 
-async def on_startup(dp: Dispatcher):
+async def on_startup(dp: Dispatcher, db: DataBase):
+    db.create_tables()
     await notify_admins(dp)
 
 
@@ -65,7 +66,7 @@ async def main():
     register_all_handlers(dp)
 
     try: 
-        await on_startup(dp)
+        await on_startup(dp, db)
         await dp.start_polling()
     finally:
         await dp.storage.close()
