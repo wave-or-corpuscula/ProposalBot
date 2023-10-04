@@ -15,8 +15,8 @@ class DataBase:
         self.cursor = self.connection.cursor()
 
     def get_topic_name(self, topic_id: int):
-        sql = "SELECT topic_name FROM TopicTypes WHERE topic_id={}".format(topic_id)
-        self.cursor.execute(sql)
+        sql = "SELECT topic_name FROM TopicTypes WHERE topic_id=?;"
+        self.cursor.execute(sql, (topic_id,))
         return self.cursor.fetchall()[0][0]
     
     def add_user(self, user_id: int, username, first_name, last_name):
@@ -27,6 +27,16 @@ class DataBase:
             self.connection.commit()
         except sqlite3.IntegrityError as e:
             logger.debug(f"Error while adding user {user_id}: {e}")
+
+    def ban_user(self, user_id: int):
+        sql = """UPDATE Users SET is_banned=1, ban_time=? WHERE user_id=?;"""
+        self.cursor.execute(sql, (datetime.now(), user_id,))
+        self.connection.commit()
+
+    def unban_user(self, user_id: int):
+        sql = """UPDATE Users SET is_banned=0 WHERE user_id=?;"""
+        self.cursor.execute(sql, (user_id,))
+        self.connection.commit()
 
     def add_message(self, message_id: int, user_id: int, topic_id: int, message: str):
         sql = """INSERT INTO Messages (message_id, user_id, topic_id, message) 
@@ -166,7 +176,8 @@ class DataBase:
                 m.topic_id
             FROM Messages m 
             JOIN TopicTypes tt ON tt.topic_id = m.topic_id
-            WHERE m.response IS NULL
+            JOIN Users u ON u.user_id = m.user_id
+            WHERE m.response IS NULL AND u.is_banned=0
             GROUP BY topic_name, m.topic_id
             ORDER BY m.topic_id;
             """
@@ -185,7 +196,8 @@ class DataBase:
                 m.pin_id
             FROM Messages m
             JOIN TopicTypes tt ON tt.topic_id = m.topic_id
-            WHERE m.topic_id = ? AND m.response IS NULL;
+            JOIN Users u ON u.user_id = m.user_id
+            WHERE m.topic_id=? AND m.response IS NULL AND u.is_banned=0;
             """
         self.cursor.execute(sql, (topic_id,))
         messages = []

@@ -11,6 +11,12 @@ admin_menu = InlineKeyboardMarkup(
             )
         ],
         [
+            InlineKeyboardButton(
+                text="Статистика",
+                callback_data="stats"
+            )
+        ],
+        [
         
             InlineKeyboardButton(
                 text="Редактировать темы",
@@ -19,9 +25,9 @@ admin_menu = InlineKeyboardMarkup(
         ],
         [
             InlineKeyboardButton(
-                text="Статистика",
-                callback_data="stats"
-            )
+                text="Заблокированные пользователи",
+                callback_data="banned_users"
+                )
         ]
     ]
 )

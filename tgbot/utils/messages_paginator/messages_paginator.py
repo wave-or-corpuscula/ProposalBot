@@ -8,8 +8,10 @@ from aiogram.types import (InlineKeyboardButton,
 class MessagesPaginator():
 
     def __init__(self, messages: list, with_answer: bool = False):
-        self.current_page = 0
+        if len(messages) == 0:
+            raise Exception
         self.messages = messages
+        self.current_page = 0
         self.messages_amount = len(messages)
         self.with_answer = with_answer
 

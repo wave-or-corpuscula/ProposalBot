@@ -147,6 +147,19 @@ async def ban_user(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     paginator: MessagesPaginator = data["paginator"]
     user_message = paginator.get_cur_message()
+    call.message.bot.db.ban_user(user_message["user_id"])
+
+    messages = call.message.bot.db.get_unanswered_messages(data["topic_id"])
+    try:
+        paginator = MessagesPaginator(messages, with_answer=False)
+        keyboard, message = paginator.get_page()
+        
+        await state.update_data(paginator=paginator)
+        await call.message.edit_text("<b>Пользователь успешно забанен\nЕго сообщения будут скрыты</b>\n" + message, reply_markup=keyboard)
+    except Exception:
+        keyboard = call.message.bot.kcreator.get_unanswered_messages_topics_keyboard()
+        await AdminStates.unanswered_messages_show.set()
+        await call.message.edit_text("Выберите тему:", reply_markup=keyboard)
 
 
 
@@ -192,4 +205,8 @@ def register_messages(dp: Dispatcher):
     # Pin message
     dp.register_callback_query_handler(pin_message,
                                        callback_data="star",
+                                       state=AdminStates.topic_messages_paginating)
+    # Ban user
+    dp.register_callback_query_handler(ban_user,
+                                       callback_data="ban",
                                        state=AdminStates.topic_messages_paginating)
