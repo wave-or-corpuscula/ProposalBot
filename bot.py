@@ -1,3 +1,7 @@
+import yaml
+
+import logging.config
+
 import asyncio
 
 import nest_asyncio
@@ -63,6 +67,10 @@ async def main():
 
     bot["config"] = config
     bot.db = db
+    
+    with open("logging_config.yaml", "r") as file:
+        log_config = yaml.safe_load(file)
+    logging.config.dictConfig(log_config)
 
     register_all_filters(dp)
     register_all_handlers(dp)

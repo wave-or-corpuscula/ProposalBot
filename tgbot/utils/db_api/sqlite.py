@@ -1,4 +1,6 @@
 import logging
+logger = logging.getLogger(__name__)
+print(logger.level)
 
 import sqlite3
 
@@ -27,7 +29,7 @@ class DataBase:
             self.cursor.execute(sql, (user_id, username, first_name, last_name, ))
             self.connection.commit()
         except sqlite3.IntegrityError as e:
-            logging.warning(f"Error while adding user {user_id}: {e}")
+            logger.debug(f"Error while adding user {user_id}: {e}")
 
     def add_message(self, message_id: int, user_id: int, topic_id: int, message: str):
         sql = """INSERT INTO Messages (message_id, user_id, topic_id, message) 

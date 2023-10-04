@@ -1,0 +1,25 @@
+version: 1
+disable_existing_loggers: True
+formatters:
+  std_format:
+    format: '{asctime} - {name} - {levelname} - {filename} - [{message}]'
+    style: '{'
+handlers:
+  console:
+    class: logging.StreamHandler
+    level: WARNING
+    formatter: std_format
+  file:
+    class: logging.FileHandler
+    level: WARNING
+    formatter: std_format
+    filename: logs/debug.log
+    mode: a
+loggers:
+  main_bot_logger:
+    level: DEBUG
+    handlers: [console, file]
+#     propagate: False
+# root:
+#   level: DEBUG
+#   handlers: [console]

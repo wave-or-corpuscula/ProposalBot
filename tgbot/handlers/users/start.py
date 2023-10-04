@@ -4,7 +4,7 @@ from aiogram import types, Dispatcher
 from aiogram.dispatcher.filters.builtin import CommandStart
 from aiogram.dispatcher import FSMContext
 
-from tgbot.states.app_states import AppStates
+from tgbot.states.user_states import UserStates
 
 
 async def bot_start(message: types.Message, state: FSMContext):
@@ -15,7 +15,7 @@ async def bot_start(message: types.Message, state: FSMContext):
                             message.from_user.first_name, 
                             message.from_user.last_name)
 
-    await state.set_state(AppStates.choose_message_type)
+    await state.set_state(UserStates.choose_message_type)
     await message.answer("Выберите тип сообщения:", reply_markup=keyboard)
 
     
