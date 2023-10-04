@@ -24,7 +24,7 @@ CREATE TABLE IF NOT EXISTS "Messages" (
 	"user_id"	INTEGER,
 	"topic_id"	INTEGER NOT NULL,
 	"message"	TEXT NOT NULL,
-	"repsonse"	TEXT DEFAULT NULL,
+	"response"	TEXT DEFAULT NULL,
 	"message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
 	"pin_id"	INTEGER,
 	FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION,

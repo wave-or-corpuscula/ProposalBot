@@ -15,6 +15,7 @@ from tgbot.config import load_config
 from tgbot.handlers.admin.stats import register_stats
 from tgbot.handlers.admin.topics_managing import register_topics_managing, notify_admins
 from tgbot.handlers.admin.messages import register_messages
+from tgbot.handlers.admin.messages_pagination import register_messages_pagination
 from tgbot.handlers.users.echo import register_echo
 from tgbot.handlers.users.start import register_start
 from tgbot.handlers.users.conversation import register_conversation
@@ -40,6 +41,7 @@ async def on_startup(dp: Dispatcher, db: DataBase):
 def register_all_handlers(dp):
     register_topics_managing(dp)
     register_stats(dp)
+    register_messages_pagination(dp)
     register_messages(dp)
     register_start(dp)
     register_conversation(dp)
@@ -88,7 +90,6 @@ async def main():
         await dp.storage.close()
         await dp.storage.wait_closed()
         await bot.session.close()
-
 
 if __name__ == '__main__':
     try:

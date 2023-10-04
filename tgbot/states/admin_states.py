@@ -17,3 +17,6 @@ class AdminStates(StatesGroup):
 
     # Messages
     messages_menu = State()
+    unanswered_messages_show = State()
+    topic_messages_paginating = State()
+    answer_message_typing = State()

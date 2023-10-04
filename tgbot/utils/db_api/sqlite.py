@@ -36,6 +36,31 @@ class DataBase:
             self.connection.commit()
         except Exception as e:
             print(e)
+
+    def del_message(self, message_id: int, user_id: int):
+        sql = """DELETE FROM Messages WHERE message_id=? AND user_id=?;"""
+        self.cursor.execute(sql, (message_id, user_id,))
+        self.connection.commit()
+    
+    def response_message(self, message_id: int, user_id: int, response: str):
+        sql = """UPDATE Messages SET response=? WHERE user_id=? AND message_id=?;"""
+        self.cursor.execute(sql, (response, user_id, message_id,))
+        self.connection.commit()
+
+    def get_types(self):
+        sql = "SELECT * FROM TopicTypes;"
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+    
+    def del_topic(self, topic_id: int):
+        sql = "DELETE FROM TopicTypes WHERE topic_id=?"
+        self.cursor.execute(sql, (topic_id,))
+        self.connection.commit()
+
+    def add_topic(self, topic_name: str):
+        sql = "INSERT INTO TopicTypes (topic_name) VALUES (?);"
+        self.cursor.execute(sql, (topic_name,))
+        self.connection.commit()
     
     def create_tables(self):
         tables_sql = ["""
@@ -68,7 +93,7 @@ class DataBase:
                     "user_id"	INTEGER,
                     "topic_id"	INTEGER NOT NULL,
                     "message"	TEXT NOT NULL,
-                    "repsonse"	TEXT DEFAULT NULL,
+                    "response"	TEXT DEFAULT NULL,
                     "message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
                     "pin_id"	INTEGER,
                     FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION,
@@ -122,3 +147,47 @@ class DataBase:
         sql = "INSERT INTO TopicTypes (topic_name) VALUES (?);"
         self.cursor.execute(sql, (topic_name,))
         self.connection.commit()
+
+    def get_topics_unanswered_messages(self):
+        sql = """
+            SELECT 
+                topic_name,
+                count(m.topic_id),
+                m.topic_id
+            FROM Messages m 
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.response IS NULL
+            GROUP BY topic_name, m.topic_id
+            ORDER BY m.topic_id;
+            """
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+    
+    def get_unanswered_messages(self, topic_id: int):
+        sql = """
+            SELECT 
+                topic_name,
+                message,
+                response,
+                m.user_id,
+                m.message_id
+            FROM Messages m
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.topic_id = ? AND m.response IS NULL;
+            """
+        self.cursor.execute(sql, (topic_id,))
+        messages = []
+        for mes in self.cursor.fetchall():
+            messages.append(
+                {
+                    "topic_name": mes[0],
+                    "message": mes[1],
+                    "response": mes[2],
+                    "user_id": mes[3],
+                    "message_id": mes[4]
+                }
+            )
+
+        return messages
+
+    
