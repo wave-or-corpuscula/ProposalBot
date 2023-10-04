@@ -5,8 +5,6 @@ import sqlite3
 
 from datetime import datetime
 
-from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
-
 from . import Config
 
 
@@ -124,34 +122,3 @@ class DataBase:
         sql = "INSERT INTO TopicTypes (topic_name) VALUES (?);"
         self.cursor.execute(sql, (topic_name,))
         self.connection.commit()
-
-    def get_types_keyboard(self):
-        types = self.get_types()
-        types_triple = []
-        row_count = 3
-        index = 0
-        go_on = True
-        while go_on:
-            triplet = []
-            for _ in range(row_count):
-                try:
-                    triplet.append(InlineKeyboardButton(callback_data=types[index][0], text=types[index][1]))
-                    index += 1
-                except Exception:
-                    go_on = False
-                    break
-            types_triple.append(triplet)
-        return InlineKeyboardMarkup(3, inline_keyboard=types_triple)
-
-    def get_types_edit_keyboard(self):
-        types = self.get_types()
-        buttons = []
-        for topic_type in types:
-            buttons.append(
-                [
-                    InlineKeyboardButton(text=f"{topic_type[1]} ❌",
-                                         callback_data=topic_type[0])
-                ]
-            )
-        buttons.append([InlineKeyboardButton(text="Назад", callback_data="back")])
-        return InlineKeyboardMarkup(1, buttons)

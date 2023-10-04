@@ -29,6 +29,7 @@ from tgbot.filters.callback_data import CallbackDataFilter
 from tgbot.filters.text import TextFilter
 
 from tgbot.utils.db_api.sqlite import DataBase
+from tgbot.utils.keyboard_designer.keyboards_creator import KeyboardsCreator
 
 
 async def on_startup(dp: Dispatcher, db: DataBase):
@@ -67,9 +68,11 @@ async def main():
     bot = Bot(token=config.tg_bot.token, parse_mode="HTML")
     dp = Dispatcher(bot, storage=storage, loop=loop)
     db = DataBase(config)
+    kcreator = KeyboardsCreator(db)
 
     bot["config"] = config
     bot.db = db
+    bot.kcreator = kcreator
     
     with open("logging_config.yaml", "r") as file:
         log_config = yaml.safe_load(file)

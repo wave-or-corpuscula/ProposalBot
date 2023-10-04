@@ -33,7 +33,7 @@ async def back_from_topic_changing(call: types.CallbackQuery):
 
 
 async def list_delete_topics(call: types.CallbackQuery):
-    keyboard = call.message.bot.db.get_types_edit_keyboard()
+    keyboard = call.message.bot.kcreator.get_types_edit_keyboard()
     await AdminStates.del_topic.set()
     await call.message.edit_text("Выберите тему для удаления:", reply_markup=keyboard)
 
@@ -49,7 +49,7 @@ async def delete_topic(call: types.CallbackQuery):
 
 
 async def forbidden_to_delete_topic(call: types.CallbackQuery):
-    keyboard = call.message.bot.db.get_types_edit_keyboard()
+    keyboard = call.message.bot.kcreator.get_types_edit_keyboard()
     answer = [
         "<i>Вы не можете удалить <u>эту</u> тему!</i>",
         "Выберите <b>другую</b> тему для удаления: " 

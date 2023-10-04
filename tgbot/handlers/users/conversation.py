@@ -15,7 +15,7 @@ async def choose_message_type(call: types.CallbackQuery, state: FSMContext):
 
 async def add_message_to_db(message: types.Message, state: FSMContext):
     user_data = await state.get_data()
-    keyboard = message.bot.db.get_types_keyboard()
+    keyboard = message.bot.kcreator.get_types_keyboard()
 
     message.bot.db.add_message(message.message_id,
                                message.from_user.id, 

@@ -9,7 +9,7 @@ from tgbot.states.user_states import UserStates
 
 async def bot_start(message: types.Message, state: FSMContext):
 
-    keyboard = message.bot.db.get_types_keyboard()
+    keyboard = message.bot.kcreator.get_types_keyboard()
     message.bot.db.add_user(message.from_user.id, 
                             message.from_user.username, 
                             message.from_user.first_name, 
