@@ -9,9 +9,9 @@ from tgbot.states.admin_states import AdminStates
 from tgbot.keyboards.inline.admin import admin_menu, types_edit_menu
 
 
-async def admin_started(message: types.Message, state: FSMContext):
+async def admin_started(message: types.Message):
+    await AdminStates.admin_main_menu.set()
     await message.answer("Выберите действие:", reply_markup=admin_menu)
-    await state.set_state(AdminStates.admin_main_menu)
 
 
 async def notify_admins(dp: Dispatcher):
@@ -22,73 +22,71 @@ async def notify_admins(dp: Dispatcher):
             logging.warning(f"Cannot send message to admin {admin}")
 
 
-async def topics_main_menu(call: types.CallbackQuery, state: FSMContext):
+async def topics_main_menu(call: types.CallbackQuery):
+    await AdminStates.topic_changing_menu.set()
     await call.message.edit_text("Выберите подходящее:", reply_markup=types_edit_menu)
-    await state.set_state(AdminStates.topic_changing_menu)
 
 
-async def back_from_topic_changing(call: types.CallbackQuery, state: FSMContext):
+async def back_from_topic_changing(call: types.CallbackQuery):
+    await AdminStates.admin_main_menu.set()
     await call.message.edit_text("Выберите действие:", reply_markup=admin_menu)
-    await state.set_state(AdminStates.admin_main_menu)
 
 
-async def list_delete_topics(call: types.CallbackQuery, state: FSMContext):
+async def list_delete_topics(call: types.CallbackQuery):
     keyboard = call.message.bot.db.get_types_edit_keyboard()
+    await AdminStates.del_topic.set()
     await call.message.edit_text("Выберите тему для удаления:", reply_markup=keyboard)
-    await state.set_state(AdminStates.del_topic)
 
 
-async def delete_topic(call: types.CallbackQuery, state: FSMContext):
+async def delete_topic(call: types.CallbackQuery):
     call.message.bot.db.del_topic(call.data)
     answer = [
         "<i>Тема успешно удалена!</i>",
         "Выберите действие:"
     ]
+    await AdminStates.admin_main_menu.set()
     await call.message.edit_text("\n".join(answer), reply_markup=admin_menu)
-    await state.set_state(AdminStates.admin_main_menu)
 
 
-async def forbidden_to_delete_topic(call: types.CallbackQuery, state: FSMContext):
+async def forbidden_to_delete_topic(call: types.CallbackQuery):
     keyboard = call.message.bot.db.get_types_edit_keyboard()
     answer = [
         "<i>Вы не можете удалить <u>эту</u> тему!</i>",
         "Выберите <b>другую</b> тему для удаления: " 
     ]
+    await AdminStates.del_topic.set()
     await call.message.edit_text("\n".join(answer), reply_markup=keyboard)    
-    await state.set_state(AdminStates.del_topic)
 
 
-async def abort_delete_topic(call: types.CallbackQuery, state: FSMContext):
+async def abort_delete_topic(call: types.CallbackQuery):
     answer = [
         "<i>Удаление отменено!</i>",
         "Выберите действие:"
     ]
+    await AdminStates.admin_main_menu.set()
     await call.message.edit_text("\n".join(answer), reply_markup=admin_menu)
-    await state.set_state(AdminStates.admin_main_menu)
 
 
-async def send_new_topic_name(call: types.CallbackQuery, state: FSMContext):
-    await call.message.answer("Введите название новой темы (или 'Назад', для отмены):")
-    await state.set_state(AdminStates.waiting_for_new_topic_name)
+async def send_new_topic_name(call: types.CallbackQuery):
+    await AdminStates.waiting_for_new_topic_name.set()
+    await call.message.edit_text("Введите название новой темы (или 'Назад', для отмены):", reply_markup=None)
 
 
-async def add_topic(message: types.Message, state: FSMContext):
+async def add_topic(message: types.Message):
     
     if message.text.lower() == "назад":
         answer = [
         "<i>Добавление отменено!</i>",
         "Выберите действие:"
         ]
-        await message.answer("\n".join(answer), reply_markup=admin_menu)
-        await state.set_state(AdminStates.admin_main_menu)
     else:
         message.bot.db.add_topic(message.text)
         answer = [
             "<i>Тема успешно добавлена!</i>",
             "Выберите действие:"
         ]
-        await message.answer("\n".join(answer), reply_markup=admin_menu)
-        await state.set_state(AdminStates.admin_main_menu)
+    await AdminStates.admin_main_menu.set()
+    await message.answer("\n".join(answer), reply_markup=admin_menu)
 
 
 def register_topics_managing(dp: Dispatcher):

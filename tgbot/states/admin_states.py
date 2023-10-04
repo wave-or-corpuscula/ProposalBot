@@ -14,3 +14,6 @@ class AdminStates(StatesGroup):
     statistic_menu = State()
     topics_amount_view = State()
     week_topics_view = State()
+
+    # Messages
+    messages_menu = State()
