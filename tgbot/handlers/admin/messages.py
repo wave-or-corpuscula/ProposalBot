@@ -106,8 +106,10 @@ async def send_answer_message(message: types.Message, state: FSMContext):
     except Exception:
         keyboard = message.bot.kcreator.get_unanswered_messages_topics_keyboard()
         await AdminStates.unanswered_messages_show.set()
+        await state.reset_data()
         await message.answer("Выберите тему:", reply_markup=keyboard)
 
+# Delete message
 
 async def delete_message(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
@@ -118,11 +120,35 @@ async def delete_message(call: types.CallbackQuery, state: FSMContext):
         paginator.del_cur_message()
         await state.update_data(paginator=paginator)
         keyboard, message = paginator.get_page()
-        await call.message.edit_text("<b>Ответ успешно отправлен!</b>\n" + message, reply_markup=keyboard)
+        await call.message.edit_text("<b>Сообщение успешно удалено!</b>\n" + message, reply_markup=keyboard)
     except Exception:
         keyboard = call.message.bot.kcreator.get_unanswered_messages_topics_keyboard()
         await AdminStates.unanswered_messages_show.set()
         await call.message.answer("Выберите тему:", reply_markup=keyboard)
+
+# Pin/Unpin message
+
+async def pin_message(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    paginator: MessagesPaginator = data["paginator"]
+    user_message = paginator.get_cur_message()
+    if not user_message["pin_id"]:
+        call.message.bot.db.pin_message(user_message["message_id"], user_message["user_id"])
+    else:
+        call.message.bot.db.unpin_message(user_message["message_id"], user_message["user_id"])
+    paginator.change_message_pin()
+    await state.update_data(paginator=paginator)
+    keyboard, message = paginator.get_page()
+    await call.message.edit_text(message, reply_markup=keyboard)
+
+# Ban user
+
+async def ban_user(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    paginator: MessagesPaginator = data["paginator"]
+    user_message = paginator.get_cur_message()
+
+
 
 
 def register_messages(dp: Dispatcher):
@@ -161,5 +187,9 @@ def register_messages(dp: Dispatcher):
                                 state=AdminStates.answer_message_typing)
     # Delete message
     dp.register_callback_query_handler(delete_message,
-                                callback_data="delete",
-                                state=AdminStates.topic_messages_paginating)
+                                       callback_data="delete",
+                                       state=AdminStates.topic_messages_paginating)
+    # Pin message
+    dp.register_callback_query_handler(pin_message,
+                                       callback_data="star",
+                                       state=AdminStates.topic_messages_paginating)

@@ -29,8 +29,9 @@ class MessagesPaginator():
         
         keyboard = InlineKeyboardMarkup(3, [[prev_but, current_position_but, next_but], [answer_but, star_but, delete_but, ban_but], [back_but]])
 
+        pin = "⭐️" if cur_mes["pin_id"] else ""
         message = [
-            f"Сообщение на тему: <i>{cur_mes['topic_name']}</i>\n",
+            f"Сообщение на тему: <i>{cur_mes['topic_name']}</i> {pin}\n",
             cur_mes["message"]
         ]
         if self.with_answer:
@@ -73,3 +74,16 @@ class MessagesPaginator():
         self.messages_amount -= 1
         if self.messages_amount == 0:
             raise Exception
+        
+    def change_message_pin(self):
+        cur_mes = self.messages[self.current_page]
+        cur_mes["pin_id"] = not cur_mes["pin_id"]
+
+    def pin_cur_message(self):
+        cur_mes = self.messages[self.current_page]
+        cur_mes["pin_id"] = 1
+
+    def unpin_cur_message(self):
+        cur_mes = self.messages[self.current_page]
+        cur_mes["pin_id"] = 0
+

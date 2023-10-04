@@ -47,6 +47,16 @@ class DataBase:
         self.cursor.execute(sql, (response, user_id, message_id,))
         self.connection.commit()
 
+    def pin_message(self, message_id: int, user_id: int):
+        sql = """UPDATE Messages SET pin_id=1 WHERE user_id=? AND message_id=?;"""
+        self.cursor.execute(sql, (user_id, message_id,))
+        self.connection.commit()
+
+    def unpin_message(self, message_id: int, user_id: int):
+        sql = """UPDATE Messages SET pin_id=0 WHERE user_id=? AND message_id=?;"""
+        self.cursor.execute(sql, (user_id, message_id,))
+        self.connection.commit()
+
     def get_types(self):
         sql = "SELECT * FROM TopicTypes;"
         self.cursor.execute(sql)
@@ -170,7 +180,9 @@ class DataBase:
                 message,
                 response,
                 m.user_id,
-                m.message_id
+                m.message_id,
+                m.message_date,
+                m.pin_id
             FROM Messages m
             JOIN TopicTypes tt ON tt.topic_id = m.topic_id
             WHERE m.topic_id = ? AND m.response IS NULL;
@@ -184,7 +196,9 @@ class DataBase:
                     "message": mes[1],
                     "response": mes[2],
                     "user_id": mes[3],
-                    "message_id": mes[4]
+                    "message_id": mes[4],
+                    "message_date": mes[5],
+                    "pin_id": mes[6]
                 }
             )
 
