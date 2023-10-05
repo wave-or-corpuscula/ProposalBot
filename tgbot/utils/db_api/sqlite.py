@@ -82,6 +82,128 @@ class DataBase:
         self.cursor.execute(sql, (topic_name,))
         self.connection.commit()
     
+    def get_min_max_date(self):
+        sql = "SELECT min(message_date), max(message_date) FROM Messages;"
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()[0]
+
+    def get_week_topics_amount(self, time_start: datetime, time_end: datetime):
+        sql = "SELECT \
+                    topic_name, \
+                    count(m.topic_id) \
+                FROM Messages m \
+                JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
+                WHERE message_date BETWEEN ? AND ? \
+                GROUP BY topic_name; "
+        self.cursor.execute(sql, (time_start, time_end))
+        return self.cursor.fetchall()
+
+    def get_topics_amount(self):
+        sql = "SELECT \
+                    topic_name, \
+                    count(m.topic_id) \
+                FROM Messages m \
+                JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
+                GROUP BY topic_name;" 
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+    
+    def get_types(self):
+        sql = "SELECT * FROM TopicTypes;"
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+    
+    def del_topic(self, topic_id: int):
+        sql = "DELETE FROM TopicTypes WHERE topic_id=?"
+        self.cursor.execute(sql, (topic_id,))
+        self.connection.commit()
+
+    def add_topic(self, topic_name: str):
+        sql = "INSERT INTO TopicTypes (topic_name) VALUES (?);"
+        self.cursor.execute(sql, (topic_name,))
+        self.connection.commit()
+
+    @staticmethod
+    def form_message_dict(query_result: list):
+        messages = []
+        for mes in query_result:
+            messages.append(
+                {
+                    "topic_name": mes[0],
+                    "message": mes[1],
+                    "response": mes[2],
+                    "user_id": mes[3],
+                    "message_id": mes[4],
+                    "message_date": mes[5],
+                    "pin_id": mes[6]
+                }
+            )
+        return messages
+
+    def get_topics_unanswered_messages(self):
+        sql = """
+            SELECT 
+                topic_name,
+                count(m.topic_id),
+                m.topic_id
+            FROM Messages m 
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.response IS NULL
+            GROUP BY topic_name, m.topic_id
+            ORDER BY m.topic_id;
+            """
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+    
+    def get_topics_pinned_messages(self):
+        sql = """
+            SELECT 
+                topic_name,
+                count(m.topic_id),
+                m.topic_id
+            FROM Messages m 
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.pin_id
+            GROUP BY topic_name, m.topic_id
+            ORDER BY m.topic_id;
+            """
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+    
+    def get_pinned_messages(self):
+        sql = """
+            SELECT 
+                topic_name,
+                message,
+                response,
+                m.user_id,
+                m.message_id,
+                m.message_date,
+                m.pin_id
+            FROM Messages m
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.pin_id;
+            """
+        self.cursor.execute(sql)
+        return DataBase.form_message_dict(self.cursor.fetchall())
+    
+    def get_unanswered_messages(self, topic_id: int):
+        sql = """
+            SELECT 
+                topic_name,
+                message,
+                response,
+                m.user_id,
+                m.message_id,
+                m.message_date,
+                m.pin_id
+            FROM Messages m
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.topic_id=? AND m.response IS NULL;
+            """
+        self.cursor.execute(sql, (topic_id,))
+        return DataBase.form_message_dict(self.cursor.fetchall())
+    
     def create_tables(self):
         tables_sql = ["""
                 CREATE TABLE IF NOT EXISTS  "TopicTypes" (
@@ -125,95 +247,3 @@ class DataBase:
         for sql in tables_sql: self.cursor.execute(sql)
         self.connection.commit()
         print("tables created")
-
-    
-    def get_min_max_date(self):
-        sql = "SELECT min(message_date), max(message_date) FROM Messages;"
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()[0]
-
-    def get_week_topics_amount(self, time_start: datetime, time_end: datetime):
-        sql = "SELECT \
-                    topic_name, \
-                    count(m.topic_id) \
-                FROM Messages m \
-                JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
-                WHERE message_date BETWEEN ? AND ? \
-                GROUP BY topic_name; "
-        self.cursor.execute(sql, (time_start, time_end))
-        return self.cursor.fetchall()
-
-    def get_topics_amount(self):
-        sql = "SELECT \
-                    topic_name, \
-                    count(m.topic_id) \
-                FROM Messages m \
-                JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
-                GROUP BY topic_name;" 
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()
-    
-    def get_types(self):
-        sql = "SELECT * FROM TopicTypes;"
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()
-    
-    def del_topic(self, topic_id: int):
-        sql = "DELETE FROM TopicTypes WHERE topic_id=?"
-        self.cursor.execute(sql, (topic_id,))
-        self.connection.commit()
-
-    def add_topic(self, topic_name: str):
-        sql = "INSERT INTO TopicTypes (topic_name) VALUES (?);"
-        self.cursor.execute(sql, (topic_name,))
-        self.connection.commit()
-
-    def get_topics_unanswered_messages(self):
-        sql = """
-            SELECT 
-                topic_name,
-                count(m.topic_id),
-                m.topic_id
-            FROM Messages m 
-            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
-            JOIN Users u ON u.user_id = m.user_id
-            WHERE m.response IS NULL AND u.is_banned=0
-            GROUP BY topic_name, m.topic_id
-            ORDER BY m.topic_id;
-            """
-        self.cursor.execute(sql)
-        return self.cursor.fetchall()
-    
-    def get_unanswered_messages(self, topic_id: int):
-        sql = """
-            SELECT 
-                topic_name,
-                message,
-                response,
-                m.user_id,
-                m.message_id,
-                m.message_date,
-                m.pin_id
-            FROM Messages m
-            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
-            JOIN Users u ON u.user_id = m.user_id
-            WHERE m.topic_id=? AND m.response IS NULL AND u.is_banned=0;
-            """
-        self.cursor.execute(sql, (topic_id,))
-        messages = []
-        for mes in self.cursor.fetchall():
-            messages.append(
-                {
-                    "topic_name": mes[0],
-                    "message": mes[1],
-                    "response": mes[2],
-                    "user_id": mes[3],
-                    "message_id": mes[4],
-                    "message_date": mes[5],
-                    "pin_id": mes[6]
-                }
-            )
-
-        return messages
-
-    

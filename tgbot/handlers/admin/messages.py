@@ -33,11 +33,11 @@ async def back_from_unanswered_messages(call: types.CallbackQuery):
 async def topic_messages_paginate_show(call: types.CallbackQuery, state: FSMContext):
     topic_id = call.data
     messages = call.message.bot.db.get_unanswered_messages(topic_id)
-    paginator = MessagesPaginator(messages, with_answer=False)
+    paginator = MessagesPaginator(messages)
     keyboard, message = paginator.get_page()
 
     await state.update_data(paginator=paginator, topic_id=topic_id)
-    await AdminStates.topic_messages_paginating.set()
+    await AdminStates.unanswered_messages_paginating.set()
     await call.message.edit_text(message, reply_markup=keyboard)
 
 
@@ -80,13 +80,13 @@ async def cancel_answer_message(call: types.CallbackQuery, state: FSMContext):
     paginator: MessagesPaginator = data["paginator"]
     keyboard, message = paginator.get_page()
 
-    await AdminStates.topic_messages_paginating.set()
+    await AdminStates.unanswered_messages_paginating.set()
     await state.update_data(paginator=paginator)
     await call.message.edit_text(message, reply_markup=keyboard)
 
 
 async def send_answer_message(message: types.Message, state: FSMContext):
-    await AdminStates.topic_messages_paginating.set()
+    await AdminStates.unanswered_messages_paginating.set()
     data = data = await state.get_data()
     paginator: MessagesPaginator = data["paginator"]
     user_message = paginator.get_cur_message()
@@ -151,7 +151,7 @@ async def ban_user(call: types.CallbackQuery, state: FSMContext):
 
     messages = call.message.bot.db.get_unanswered_messages(data["topic_id"])
     try:
-        paginator = MessagesPaginator(messages, with_answer=False)
+        paginator = MessagesPaginator(messages)
         keyboard, message = paginator.get_page()
         
         await state.update_data(paginator=paginator)
@@ -160,8 +160,6 @@ async def ban_user(call: types.CallbackQuery, state: FSMContext):
         keyboard = call.message.bot.kcreator.get_unanswered_messages_topics_keyboard()
         await AdminStates.unanswered_messages_show.set()
         await call.message.edit_text("Выберите тему:", reply_markup=keyboard)
-
-
 
 
 def register_messages(dp: Dispatcher):
@@ -182,17 +180,17 @@ def register_messages(dp: Dispatcher):
     # Messages pagination
     dp.register_callback_query_handler(back_from_messages_pagination,
                                        callback_data="back",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)
     dp.register_callback_query_handler(next_page,
                                        callback_data="next",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)
     dp.register_callback_query_handler(prev_page,
                                        callback_data="previous",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)
     # Answer message
     dp.register_callback_query_handler(answer_message,
                                        callback_data="answer",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)
     dp.register_callback_query_handler(cancel_answer_message,
                                        callback_data="back",
                                        state=AdminStates.answer_message_typing)
@@ -201,12 +199,12 @@ def register_messages(dp: Dispatcher):
     # Delete message
     dp.register_callback_query_handler(delete_message,
                                        callback_data="delete",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)
     # Pin message
     dp.register_callback_query_handler(pin_message,
                                        callback_data="star",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)
     # Ban user
     dp.register_callback_query_handler(ban_user,
                                        callback_data="ban",
-                                       state=AdminStates.topic_messages_paginating)
+                                       state=AdminStates.unanswered_messages_paginating)

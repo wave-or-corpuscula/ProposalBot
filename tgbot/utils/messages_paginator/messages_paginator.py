@@ -1,19 +1,33 @@
 from aiogram import types
 from aiogram.types import (InlineKeyboardButton,
-                           InlineKeyboardMarkup,
-                           Message,
-                           CallbackQuery)
+                           InlineKeyboardMarkup)
 
 
 class MessagesPaginator():
 
-    def __init__(self, messages: list, with_answer: bool = False):
+    def __init__(self, 
+                 messages: list, 
+                 have_answer_but: bool = True,
+                 have_star_but: bool = True,
+                 have_delete_but: bool = True):
         if len(messages) == 0:
             raise Exception
         self.messages = messages
         self.current_page = 0
         self.messages_amount = len(messages)
-        self.with_answer = with_answer
+
+        answer_but = InlineKeyboardButton(text="✉️", callback_data="answer")
+        star_but = InlineKeyboardButton(text="⭐️", callback_data="star")
+        delete_but = InlineKeyboardButton(text="❌", callback_data="delete")
+        ban_but = InlineKeyboardButton(text="🚫", callback_data="ban")
+
+        self.add_keyboard = []
+        if have_answer_but:
+            self.add_keyboard.append(answer_but)
+        if have_star_but:
+            self.add_keyboard.append(star_but)
+        if have_delete_but: 
+            self.add_keyboard.append(delete_but)
 
     def get_page(self):
         cur_mes = self.messages[self.current_page]
@@ -22,24 +36,23 @@ class MessagesPaginator():
         prev_but = InlineKeyboardButton(text="←", callback_data="previous")
         current_position_but = InlineKeyboardButton(text=f"{self.current_page + 1}/{self.messages_amount}", callback_data="cur_pos")
 
-        answer_but = InlineKeyboardButton(text="✉️", callback_data="answer")
-        star_but = InlineKeyboardButton(text="⭐️", callback_data="star")
-        delete_but = InlineKeyboardButton(text="❌", callback_data="delete")
-        ban_but = InlineKeyboardButton(text="🚫", callback_data="ban")
-
         back_but = InlineKeyboardButton(text="Назад", callback_data="back")
         
-        keyboard = InlineKeyboardMarkup(3, [[prev_but, current_position_but, next_but], [answer_but, star_but, delete_but, ban_but], [back_but]])
+        keys = [[prev_but, current_position_but, next_but], [back_but]]
+        if len(self.add_keyboard) != 0:
+            keys.insert(1, self.add_keyboard)
 
-        pin = "⭐️" if cur_mes["pin_id"] else ""
+        keyboard = InlineKeyboardMarkup(3, keys)
+
+        pin = " ⭐️" if cur_mes["pin_id"] else ""
         message = [
-            f"Сообщение на тему: <i>{cur_mes['topic_name']}</i> {pin}\n",
+            f"Сообщения на тему: <i>{cur_mes['topic_name']}</i>{pin}\n",
             cur_mes["message"]
         ]
-        if self.with_answer:
+        if cur_mes["response"]:
             message.append(
                 [
-                    "\<i>nОтвет:</i>\n",
+                    "<i>nОтвет:</i>\n",
                     cur_mes["response"]
                 ]
             )
