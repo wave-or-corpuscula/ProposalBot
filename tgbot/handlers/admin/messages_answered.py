@@ -11,8 +11,8 @@ from tgbot.handlers.admin.messages import show_message_menu
 
 # Messages pagination
 
-async def pinned_messages_paginate_show(call: types.CallbackQuery, state: FSMContext):
-    messages = call.message.bot.db.get_pinned_messages()
+async def answered_messages_paginate_show(call: types.CallbackQuery, state: FSMContext):
+    messages = call.message.bot.db.get_answered_messages()
     try:
         paginator = MessagesPaginator(messages, 
                                     have_answer_but=False, 
@@ -25,15 +25,15 @@ async def pinned_messages_paginate_show(call: types.CallbackQuery, state: FSMCon
         await call.message.edit_text(message, reply_markup=keyboard)
     except Exception:
         await AdminStates.messages_menu.set()
-        await call.message.edit_text("<b>Избранные отсутствуют!</b>\nВыберите подходящий пункт:", reply_markup=messages_menu)
+        await call.message.edit_text("<b>Ответы отсутствуют!</b>\nВыберите подходящий пункт:", reply_markup=messages_menu)
 
 
-async def back_from_pinned_messages_pagination(call: types.CallbackQuery, state: FSMContext):
+async def back_from_answered_messages_pagination(call: types.CallbackQuery, state: FSMContext):
     await state.reset_data()
     await show_message_menu(call)
 
 
-async def pinned_next_page(call: types.CallbackQuery, state: FSMContext):
+async def answered_next_page(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     paginator: MessagesPaginator = data["paginator"]
     try:
@@ -44,7 +44,7 @@ async def pinned_next_page(call: types.CallbackQuery, state: FSMContext):
         pass
 
 
-async def pinned_prev_page(call: types.CallbackQuery, state: FSMContext):
+async def answered_prev_page(call: types.CallbackQuery, state: FSMContext):
     data = await state.get_data()
     paginator: MessagesPaginator = data["paginator"]
     try:
@@ -55,17 +55,17 @@ async def pinned_prev_page(call: types.CallbackQuery, state: FSMContext):
         pass
     
 
-def register_messages_pinned(dp: Dispatcher):
-    dp.register_callback_query_handler(pinned_messages_paginate_show,
-                                       callback_data="saved",
+def register_messages_answered(dp: Dispatcher):
+    dp.register_callback_query_handler(answered_messages_paginate_show,
+                                       callback_data="answered",
                                        state=AdminStates.messages_menu)
-    dp.register_callback_query_handler(back_from_pinned_messages_pagination,
+    dp.register_callback_query_handler(back_from_answered_messages_pagination,
                                        callback_data="back",
-                                       state=AdminStates.pinned_messages_paginating)
-    dp.register_callback_query_handler(pinned_next_page,
+                                       state=AdminStates.answered_messages_paginating)
+    dp.register_callback_query_handler(answered_next_page,
                                        callback_data="next",
-                                       state=AdminStates.pinned_messages_paginating)
-    dp.register_callback_query_handler(pinned_prev_page,
+                                       state=AdminStates.answered_messages_paginating)
+    dp.register_callback_query_handler(answered_prev_page,
                                        callback_data="previous",
-                                       state=AdminStates.pinned_messages_paginating)
+                                       state=AdminStates.answered_messages_paginating)
     

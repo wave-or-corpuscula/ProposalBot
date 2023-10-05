@@ -46,17 +46,14 @@ class MessagesPaginator():
 
         pin = " ⭐️" if cur_mes["pin_id"] else ""
         message = [
-            f"Сообщения на тему: <i>{cur_mes['topic_name']}</i>{pin}\n",
-            cur_mes["message"]
+            f"<b>Сообщения на тему:</b> <i>{cur_mes['topic_name']}</i>{pin}",
+            f"{cur_mes['message']}\n"
         ]
         if cur_mes["response"]:
-            message.append(
-                [
-                    "<i>nОтвет:</i>\n",
-                    cur_mes["response"]
+            message += [
+                    "<b>Ответ:</b>",
+                    f"<i>{cur_mes['response']}</i>"
                 ]
-            )
-
         return keyboard, "\n".join(message)
     
     def next_page(self):

@@ -187,6 +187,23 @@ class DataBase:
         self.cursor.execute(sql)
         return DataBase.form_message_dict(self.cursor.fetchall())
     
+    def get_answered_messages(self):
+        sql = """
+            SELECT 
+                topic_name,
+                message,
+                response,
+                m.user_id,
+                m.message_id,
+                m.message_date,
+                m.pin_id
+            FROM Messages m
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE m.response IS NOT NULL;
+            """
+        self.cursor.execute(sql)
+        return DataBase.form_message_dict(self.cursor.fetchall())
+    
     def get_unanswered_messages(self, topic_id: int):
         sql = """
             SELECT 
