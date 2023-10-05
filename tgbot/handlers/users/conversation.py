@@ -22,7 +22,8 @@ async def add_message_to_db(message: types.Message, state: FSMContext):
                                user_data["topic_id"],
                                message.text)
     answer = [
-        "<i>Сообщение успешно отправлено!</i>",
+        "<b>Сообщение успешно отправлено!</b>",
+        "<i>Ответ администрации отобразится здесь же</i>",
         "Чтобы отправить еще одно, выберите тему сообщения:"
     ]
     await state.set_state(UserStates.choose_message_type)

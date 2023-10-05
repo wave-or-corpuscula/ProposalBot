@@ -14,6 +14,50 @@ class DataBase:
         self.connection = sqlite3.connect(config.db.database)
         self.cursor = self.connection.cursor()
 
+    def create_tables(self):
+        tables_sql = ["""
+                CREATE TABLE IF NOT EXISTS  "TopicTypes" (
+                    "topic_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                    "topic_name"	TEXT NOT NULL
+                );
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS "PinTypes" (
+                    "pin_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
+                    "pin_name"	VARCHAR(255) NOT NULL
+                );
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS "Users" (
+                    "user_id"	INTEGER NOT NULL UNIQUE,
+                    "username"	VARCHAR(255),
+                    "first_name"	VARCHAR(255),
+                    "last_name"	VARCHAR(255),
+                    "registered_date"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                    "is_banned"	BOOLEAN NOT NULL DEFAULT 0,
+                    PRIMARY KEY("user_id")
+                );
+                """,
+                """
+                CREATE TABLE IF NOT EXISTS "Messages" (
+                    "chat_id"	INTEGER,
+                    "message_id"	INTEGER NOT NULL,
+                    "user_id"	INTEGER,
+                    "topic_id"	INTEGER NOT NULL,
+                    "message"	TEXT NOT NULL,
+                    "response"	TEXT DEFAULT NULL,
+                    "message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    "pin_id"	INTEGER,
+                    FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION,
+                    FOREIGN KEY("user_id") REFERENCES "Users"("user_id") ON DELETE SET NULL,
+                    PRIMARY KEY("message_id","chat_id"),
+                    FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION
+                );
+                """]
+        for sql in tables_sql: self.cursor.execute(sql)
+        self.connection.commit()
+        print("tables created")
+
     def get_topic_name(self, topic_id: int):
         sql = "SELECT topic_name FROM TopicTypes WHERE topic_id=?;"
         self.cursor.execute(sql, (topic_id,))
@@ -95,7 +139,7 @@ class DataBase:
                 JOIN TopicTypes tt ON tt.topic_id = m.topic_id \
                 WHERE message_date BETWEEN ? AND ? \
                 GROUP BY topic_name; "
-        self.cursor.execute(sql, (time_start, time_end))
+        self.cursor.execute(sql, (time_start.date(), time_end.date()))
         return self.cursor.fetchall()
 
     def get_topics_amount(self):
@@ -221,46 +265,69 @@ class DataBase:
         self.cursor.execute(sql, (topic_id,))
         return DataBase.form_message_dict(self.cursor.fetchall())
     
-    def create_tables(self):
-        tables_sql = ["""
-                CREATE TABLE IF NOT EXISTS  "TopicTypes" (
-                    "topic_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "topic_name"	TEXT NOT NULL
-                );
-                """,
-                """
-                CREATE TABLE IF NOT EXISTS "PinTypes" (
-                    "pin_id"	INTEGER PRIMARY KEY AUTOINCREMENT,
-                    "pin_name"	VARCHAR(255) NOT NULL
-                );
-                """,
-                """
-                CREATE TABLE IF NOT EXISTS "Users" (
-                    "user_id"	INTEGER NOT NULL UNIQUE,
-                    "username"	VARCHAR(255),
-                    "first_name"	VARCHAR(255),
-                    "last_name"	VARCHAR(255),
-                    "registered_date"	DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                    "is_banned"	BOOLEAN NOT NULL DEFAULT 0,
-                    PRIMARY KEY("user_id")
-                );
-                """,
-                """
-                CREATE TABLE IF NOT EXISTS "Messages" (
-                    "chat_id"	INTEGER,
-                    "message_id"	INTEGER NOT NULL,
-                    "user_id"	INTEGER,
-                    "topic_id"	INTEGER NOT NULL,
-                    "message"	TEXT NOT NULL,
-                    "response"	TEXT DEFAULT NULL,
-                    "message_date"	DATETIME DEFAULT CURRENT_TIMESTAMP,
-                    "pin_id"	INTEGER,
-                    FOREIGN KEY("topic_id") REFERENCES "TopicTypes"("topic_id") ON DELETE NO ACTION,
-                    FOREIGN KEY("user_id") REFERENCES "Users"("user_id") ON DELETE SET NULL,
-                    PRIMARY KEY("message_id","chat_id"),
-                    FOREIGN KEY("pin_id") REFERENCES "PinTypes"("pin_id") ON DELETE NO ACTION
-                );
-                """]
-        for sql in tables_sql: self.cursor.execute(sql)
-        self.connection.commit()
-        print("tables created")
+    @staticmethod
+    def form_excel_messages(messages: list):
+        dict_mes_list = []
+        for mes in messages:
+            dict_mes_list.append(
+                {
+                    "Дата": mes[0],
+                    "Название темы": mes[1],
+                    "Сообщение": mes[2],
+                    "Ответ": mes[3]
+                }
+            )
+        return dict_mes_list
+
+    def get_all_messages_excel(self):
+        sql = """
+            SELECT
+                date(message_date),
+                topic_name,
+                message,
+                response
+            FROM Messages m
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id;
+            """
+        self.cursor.execute(sql)
+        return self.cursor.fetchall()
+
+    def get_messages_in_period(self, start_date: datetime, end_date: datetime):
+        sql = """
+            SELECT
+                date(message_date),
+                topic_name,
+                message,
+                response
+            FROM Messages m
+            JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+            WHERE message_date BETWEEN ? AND ?;
+            """
+        self.cursor.execute(sql, (start_date, end_date,))
+        return self.cursor.fetchall()
+        # return DataBase.form_excel_messages(self.cursor.fetchall())
+
+    def get_topic_messages_excel(self):
+        topics_messages = []
+        topics_sql = """SELECT topic_id, topic_name FROM TopicTypes;"""
+        topic_mes_sql = """
+                        SELECT
+                        date(message_date),
+                        topic_name,
+                        message,
+                        response
+                    FROM Messages m
+                    JOIN TopicTypes tt ON tt.topic_id = m.topic_id
+                    WHERE m.topic_id = ?;
+                    """
+        self.cursor.execute(topics_sql)
+        topics = self.cursor.fetchall()
+
+        for topic in topics:
+            self.cursor.execute(topic_mes_sql, (topic[0],))
+            topic_mess = self.cursor.fetchall()
+            topics_messages.append({topic[1]: topic_mess})
+
+        return topics_messages
+
+    

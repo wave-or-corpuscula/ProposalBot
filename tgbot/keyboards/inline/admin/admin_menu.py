@@ -23,12 +23,12 @@ admin_menu = InlineKeyboardMarkup(
                 callback_data="edit_topics"
                 )
         ],
-        [
-            InlineKeyboardButton(
-                text="Заблокированные пользователи",
-                callback_data="banned_users"
-                )
-        ]
+        # [
+        #     InlineKeyboardButton(
+        #         text="Заблокированные пользователи",
+        #         callback_data="banned_users"
+        #         )
+        # ]
     ]
 )
 

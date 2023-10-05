@@ -124,6 +124,7 @@ async def delete_message(call: types.CallbackQuery, state: FSMContext):
     except Exception:
         keyboard = call.message.bot.kcreator.get_unanswered_messages_topics_keyboard()
         await AdminStates.unanswered_messages_show.set()
+        await call.message.edit_text("<b>Больше нет сообщений на данную тему</b>")
         await call.message.answer("Выберите тему:", reply_markup=keyboard)
 
 # Pin/Unpin message

@@ -7,11 +7,27 @@ from aiogram.dispatcher import FSMContext
 
 from tgbot.states.admin_states import AdminStates
 from tgbot.keyboards.inline.admin import admin_menu, statistics_menu, back_button
+from tgbot.utils.excel.excel_formatter import ExcelFormatter
 
+
+# async def get_stats(call: types.CallbackQuery, state: FSMContext):
+#     await call.message.edit_text("Выберите пункт для отображения:", reply_markup=statistics_menu)
+#     await state.set_state(AdminStates.statistic_menu)
 
 async def get_stats(call: types.CallbackQuery, state: FSMContext):
-    await call.message.edit_text("Выберите пункт для отображения:", reply_markup=statistics_menu)
-    await state.set_state(AdminStates.statistic_menu)
+    date = datetime.now().strftime("%m-%d-%Y %H:%M:%S")
+    filename = f"Статистика на {date}.xlsx"
+
+    ef = ExcelFormatter(filename=filename)
+
+    mess = call.message.bot.db.get_all_messages_excel()
+    topics_dict = call.message.bot.db.get_topic_messages_excel()
+    ef.fill_excel(mess, topics_dict, )
+    await call.message.edit_text("Формирование статистики...")
+    await call.message.bot.send_document(call.message.chat.id, 
+                                         document=types.InputFile(filename))
+    await call.message.answer("Выберите действие:", reply_markup=admin_menu)
+    await state.set_state(AdminStates.admin_main_menu)
 
 
 async def get_topics_amount(call: types.CallbackQuery, state: FSMContext):

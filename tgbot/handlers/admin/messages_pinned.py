@@ -15,9 +15,7 @@ async def pinned_messages_paginate_show(call: types.CallbackQuery, state: FSMCon
     messages = call.message.bot.db.get_pinned_messages()
     try:
         paginator = MessagesPaginator(messages, 
-                                    have_answer_but=False, 
-                                    have_delete_but=False,
-                                    have_star_but=False)
+                                    have_answer_but=False)
         keyboard, message = paginator.get_page()
 
         await state.update_data(paginator=paginator)
@@ -53,6 +51,42 @@ async def pinned_prev_page(call: types.CallbackQuery, state: FSMContext):
         await call.message.edit_text(message, reply_markup=keyboard)
     except Exception:
         pass
+
+# Delete message
+
+async def pinned_message_delete(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    paginator: MessagesPaginator = data["paginator"]
+    mes_idtfrs = paginator.get_cur_message_identifiers()
+    call.message.bot.db.del_message(mes_idtfrs["message_id"], mes_idtfrs["user_id"])
+    try:
+        paginator.del_cur_message()
+        await state.update_data(paginator=paginator)
+        keyboard, message = paginator.get_page()
+        await call.message.edit_text("<b>Сообщение успешно удалено!</b>\n" + message, reply_markup=keyboard)
+    except Exception:
+        await state.reset_data()
+        await show_message_menu(call)
+
+# Pin/Unpin message
+
+async def pinned_message_pin(call: types.CallbackQuery, state: FSMContext):
+    data = await state.get_data()
+    paginator: MessagesPaginator = data["paginator"]
+    user_message = paginator.get_cur_message()
+    if not user_message["pin_id"]:
+        call.message.bot.db.pin_message(user_message["message_id"], user_message["user_id"])
+    else:
+        call.message.bot.db.unpin_message(user_message["message_id"], user_message["user_id"])
+    try:
+        paginator.del_cur_message()
+        keyboard, message = paginator.get_page()
+        await state.update_data(paginator=paginator)
+        await call.message.edit_text(message, reply_markup=keyboard)
+    except Exception:
+        await state.reset_data()
+        await show_message_menu(call)
+
     
 
 def register_messages_pinned(dp: Dispatcher):
@@ -68,4 +102,13 @@ def register_messages_pinned(dp: Dispatcher):
     dp.register_callback_query_handler(pinned_prev_page,
                                        callback_data="previous",
                                        state=AdminStates.pinned_messages_paginating)
+    # Delete message
+    dp.register_callback_query_handler(pinned_message_delete,
+                                       callback_data="delete",
+                                       state=AdminStates.pinned_messages_paginating)
+    # Pin message
+    dp.register_callback_query_handler(pinned_message_pin,
+                                       callback_data="star",
+                                       state=AdminStates.pinned_messages_paginating)
+    
     
