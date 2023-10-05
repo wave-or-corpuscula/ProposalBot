@@ -14,6 +14,15 @@ async def admin_started(message: types.Message):
     await message.answer("Выберите действие:", reply_markup=admin_menu)
 
 
+async def set_default_commands(dp):
+    await dp.bot.set_my_commands(
+        [
+            types.BotCommand("start", "Запустить бота"),
+            types.BotCommand("help", "Вывести справку")
+        ]
+    )
+
+
 async def notify_admins(dp: Dispatcher):
     for admin in dp.bot.get("config").tg_bot.admin_ids:
         try:

@@ -13,7 +13,7 @@ from aiogram.contrib.fsm_storage.memory import MemoryStorage
 from tgbot.config import load_config
 
 from tgbot.handlers.admin.stats import register_stats
-from tgbot.handlers.admin.topics_managing import register_topics_managing, notify_admins
+from tgbot.handlers.admin.topics_managing import register_topics_managing, notify_admins, set_default_commands
 from tgbot.handlers.admin.messages import register_messages
 from tgbot.handlers.admin.messages_pinned import register_messages_pinned
 from tgbot.handlers.admin.messages_answered import register_messages_answered
@@ -35,6 +35,7 @@ from tgbot.utils.keyboard_designer.keyboards_creator import KeyboardsCreator
 
 async def on_startup(dp: Dispatcher, db: DataBase):
     db.create_tables()
+    await set_default_commands(dp)
     await notify_admins(dp)
 
 
